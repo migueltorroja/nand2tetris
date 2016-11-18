@@ -1,0 +1,7 @@
+*.hdl	text
+*.tst	text
+*.cmp	text
+*.hack	text
+*.sh	text eol=lf
+*.bat	text eol=crlf
+
