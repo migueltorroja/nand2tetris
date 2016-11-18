@@ -17,4 +17,26 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+    Not(in=reset,out=nreset);
+    ALU(x=pcfeedback,zx=false,nx=true,zy=true,ny=inc,f=true,no=true,out=internalinc);
+    Mux16(a=internalinc,b=in,sel=load,out=beforereset);
+    And16(a=beforereset,
+    b[0]=nreset,
+    b[1]=nreset,
+    b[2]=nreset,
+    b[3]=nreset,
+    b[4]=nreset,
+    b[5]=nreset,
+    b[6]=nreset,
+    b[7]=nreset,
+    b[8]=nreset,
+    b[9]=nreset,
+    b[10]=nreset,
+    b[11]=nreset,
+    b[12]=nreset,
+    b[13]=nreset,
+    b[14]=nreset,
+    b[15]=nreset,
+    out=registerin);
+    Register(in=registerin,load=true,out=pcfeedback,out=out);
 }
