@@ -43,4 +43,63 @@ CHIP ALU {
 
     PARTS:
    // Put you code here:
+   Not(in=zx,out=innzx);
+   And16(a=x,
+   b[0]=innzx,
+   b[1]=innzx,
+   b[2]=innzx,
+   b[3]=innzx,
+   b[4]=innzx,
+   b[5]=innzx,
+   b[6]=innzx,
+   b[7]=innzx,
+   b[8]=innzx,
+   b[9]=innzx,
+   b[10]=innzx,
+   b[11]=innzx,
+   b[12]=innzx,
+   b[13]=innzx,
+   b[14]=innzx,
+   b[15]=innzx,
+   out=zxout);
+   Not16(in=zxout,out=outzxneg);
+   Mux16(a=zxout,b=outzxneg,sel=nx,out=nxout);
+
+   Not(in=zy,out=innzy);
+   And16(a=y,
+   b[0]=innzy,
+   b[1]=innzy,
+   b[2]=innzy,
+   b[3]=innzy,
+   b[4]=innzy,
+   b[5]=innzy,
+   b[6]=innzy,
+   b[7]=innzy,
+   b[8]=innzy,
+   b[9]=innzy,
+   b[10]=innzy,
+   b[11]=innzy,
+   b[12]=innzy,
+   b[13]=innzy,
+   b[14]=innzy,
+   b[15]=innzy,
+   out=zyout);
+   Not16(in=zyout,out=zyneg);
+   Mux16(a=zyout,b=zyneg,sel=ny,out=nyout);
+
+   And16(a=nxout,b=nyout,out=xandyf);
+   Add16(a=nxout,b=nyout,out=xplusyf);
+
+   Mux16(a=xandyf,b=xplusyf,sel=f,out=nobefore);
+   Not16(in=nobefore,out=outneg);
+   Mux16(a=nobefore,b=outneg,sel=no,
+   out[15]=ng,out=preout,out=out
+);
+
+   Or8Way(in=preout[0..7], out=loor);
+   Or8Way(in=preout[8.15], out=hior);
+   Not(in=loor,out=nloor);
+   Not(in=hior,out=nhior);
+   And(a=nloor,b=nhior,out=zr);
+   //Or(a=outpre[15],b=outpre[15],ng);
 }
