@@ -22,18 +22,36 @@ class HackInstruction(object):
                 line_out +=c
         return line_out
 
+class HackLabelParser(HackInstruction):
+    def __init__(self,line):
+        super(HackLabelParser,self).__init__(line)
+    def get_bin_code(self):
+        m = re.match("\(([^)]+)\)",self.instruction_line)
+        if m:
+            return m.group(1)
+        else:
+            return None
+
 class HackAInstruction(HackInstruction):
     A_INSTRUCTION_RE_STR = "@([0-9]+)"
+    A_INSTRUCTION_SYMBOL_RE_STR = "@([^0-9].*)"
     def __init__(self,line):
         super(HackAInstruction,self).__init__(line)
 
-    def get_bin_code(self):
+    def get_bin_code(self,symbol_dict=None):
         if re.match(HackAInstruction.A_INSTRUCTION_RE_STR,self.instruction_line):
             inst_cmp=re.compile(HackAInstruction.A_INSTRUCTION_RE_STR)
             direct_number = int(inst_cmp.match(self.instruction_line).group(1)) 
             return direct_number & 0x7FFF
+        elif re.match(HackAInstruction.A_INSTRUCTION_SYMBOL_RE_STR,self.instruction_line):
+            inst_cmp=re.compile(HackAInstruction.A_INSTRUCTION_SYMBOL_RE_STR)
+            label = inst_cmp.match(self.instruction_line).group(1)
+            if symbol_dict and symbol_dict.has_key(label):
+                return int(symbol_dict[label]) & 0x7FFF
+            else:
+                return inst_cmp.match(self.instruction_line).group(1)
         else:
-            return None 
+            return None
 
 
 class HackCInstruction(HackInstruction):
@@ -160,16 +178,79 @@ class HackCInstruction(HackInstruction):
             return None
         return 0b1110000000000000 | op_bin | self.__get_dest_bin() | self.__get_jmp_code()
 
-    
+   
+class HackAssembler(object):
+    def __init__(self,filename):
+        self.filename=filename
+        self.symbols=dict()
+        self.symbols['R0']      =     0
+        self.symbols['R1']      =     1
+        self.symbols['R2']      =     2
+        self.symbols['R3']      =     3
+        self.symbols['R4']      =     4
+        self.symbols['R5']      =     5
+        self.symbols['R6']      =     6
+        self.symbols['R7']      =     7
+        self.symbols['R8']      =     8
+        self.symbols['R9']      =     9
+        self.symbols['R10']     =    10
+        self.symbols['R11']     =    11
+        self.symbols['R12']     =    12
+        self.symbols['R13']     =    13
+        self.symbols['R14']     =    14
+        self.symbols['R15']     =    15
+        self.symbols['SP']      =     0
+        self.symbols['LCL']     =     1
+        self.symbols['ARG']     =     2
+        self.symbols['THIS']    =     3
+        self.symbols['THAT']    =     4
+        self.symbols['SCREEN']  =0x4000
+        self.symbols['KBD']     =0x6000
+
+    def __ResolveSymbols(self):
+        fp=open(self.filename,"r")
+        program_counter = 0
+        for l in fp:
+            symbol_name = None
+            symbol_value = None
+            A_binary = HackAInstruction(l).get_bin_code()
+            C_binary = HackCInstruction(l).get_bin_code()
+            Label = HackLabelParser(l).get_bin_code()
+            if A_binary is not None:
+                if type(A_binary) is str:
+                    symbol_name = A_binary
+                program_counter += 1
+            elif C_binary is not None:
+                program_counter += 1
+            elif Label is not None:
+                symbol_name = Label
+                symbol_value = program_counter
+            if symbol_value is not None:
+                self.symbols[symbol_name] = symbol_value
+            if not self.symbols.has_key(symbol_name):
+                self.symbols[symbol_name] = None
+        fp.close()
+        last_mem_address = 0x10
+        for k,v in self.symbols.iteritems():
+            if v is None:
+                self.symbols[k] = last_mem_address
+                last_mem_address += 1
+
+
+    def Output(self,outputfile=sys.stdout):
+        self.__ResolveSymbols()
+        fp=open(self.filename,"r")
+        for l in fp:
+            A_binary = HackAInstruction(l).get_bin_code(self.symbols)
+            if A_binary is not None: 
+                outputfile.write("{:016b}\n".format(A_binary))
+                continue
+            C_binary = HackCInstruction(l).get_bin_code()
+            if C_binary is not None: 
+                outputfile.write("{:016b}\n".format(C_binary))
+                continue
+        fp.close()
+
 if __name__ == "__main__":
-    fp = open(sys.argv[1],"r")
-    for l in fp:
-        A_binary = HackAInstruction(l).get_bin_code()
-        if A_binary is not None: 
-            print "{:016b}".format(A_binary)
-            continue
-        C_binary = HackCInstruction(l).get_bin_code()
-        if C_binary is not None: 
-            print "{:016b}".format(C_binary)
-            continue
-        
+    hasm=HackAssembler(sys.argv[1])
+    hasm.Output(sys.stdout)
