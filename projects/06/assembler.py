@@ -182,6 +182,7 @@ class HackCInstruction(HackInstruction):
 class HackAssembler(object):
     def __init__(self,filename):
         self.filename=filename
+        self.unresolved_symbols =    []
         self.symbols=dict()
         self.symbols['R0']      =     0
         self.symbols['R1']      =     1
@@ -227,14 +228,15 @@ class HackAssembler(object):
                 symbol_value = program_counter
             if symbol_value is not None:
                 self.symbols[symbol_name] = symbol_value
-            if not self.symbols.has_key(symbol_name):
-                self.symbols[symbol_name] = None
+            elif symbol_name is not None and  not self.symbols.has_key(symbol_name):
+                self.unresolved_symbols.append(symbol_name)
         fp.close()
         last_mem_address = 0x10
-        for k,v in self.symbols.iteritems():
-            if v is None:
-                self.symbols[k] = last_mem_address
+        for s in self.unresolved_symbols:
+            if not self.symbols.has_key(s):
+                self.symbols[s] = last_mem_address
                 last_mem_address += 1
+        self.unresolved_symbols = []
 
 
     def Output(self,outputfile=sys.stdout):
