@@ -4,3 +4,4 @@
 *.hack	text
 *.sh	text eol=lf
 *.txt   text
+*.bat	text eol=crlf
