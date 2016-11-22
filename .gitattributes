@@ -3,5 +3,4 @@
 *.cmp	text
 *.hack	text
 *.sh	text eol=lf
-*.bat	text eol=crlf
-
+*.txt   text
